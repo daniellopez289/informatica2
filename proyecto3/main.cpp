@@ -4,6 +4,7 @@
 #include <bitset> // para convertir a binario o viceversa
 #include <string>
 #include <map>
+#include <vector>
 
 using namespace std;
 
@@ -26,6 +27,14 @@ void llenarMapaUsuarios();
 Usuario verificarUsuario();
 void registrarUsuario();
 void guardarUsuarios();
+int binarioANumero1(string linea_binaria) {// opcion para convertir el binario a un caracter
+    if (linea_binaria.empty()) {
+        return 0;  // Tratar cadenas vacías como cero o puedes manejar el error de otra manera.
+    }
+
+    bitset<16> numero(linea_binaria); // Supongamos que estamos trabajando con un número de 32 bits, ajusta según tus necesidades.
+    return static_cast<int>(numero.to_ulong());
+}
 
 int main(){
     int opcionInicial = 0;
@@ -35,7 +44,8 @@ int main(){
     switch (opcionInicial) {
     case 1:
         cout << "Modo administrador" << endl;
-        if(verificarAdmin() == true){
+        //pruebaCodificar();
+        if(verificarAdmin()){
             cout << "Registrar usuario" << endl;
             registrarUsuario();
             guardarUsuarios();
@@ -50,36 +60,31 @@ int main(){
         cin >> opcionUsuario;
         /*switch (opcionUsuario) {
         case 1: // Consultar saldo*/
-        if(opcionUsuario == 1){
+        if (opcionUsuario == 1) {
             cout << "Consulta de saldo" << endl;
             int metodo, semilla;
-            cout << "Ingrese el metodo con el que codifico la informacion: ";
-            cin >> metodo;
+            while(metodo!=1 || metodo!=2){
+                cout << "Ingrese el método con el que codifico la información: ";
+                cin >> metodo;
+                if(metodo != 1 || metodo != 2){cout << "Opcion incorreacta, elige nuevamente";}
+            }
+
             cout << "Ingrese la semilla: ";
             cin >> semilla;
             string saldo;
-            if(metodo == 1){
+            if (metodo == 1) {
                 saldo = decodificarBinarioMetodo1(usuario.saldo, semilla);
             }
-            else{
+            else {
                 saldo = decodificarBinarioMetodo2(usuario.saldo, semilla);
             }
-            int aux = 7;
-            string cadena8;
-            char saldo1;
-            for(int i = 0; i < sizeof(saldo); i ++){
-                if(i == aux){
-                    char aux1 = binarioANumero(cadena8);
-                    saldo1 += aux1;
-                    aux += 8;
-                }
-                else{
-                    cadena8 += saldo[i];
-                }
-            }
-            int saldoOperativo = static_cast<int>(saldo1);
+
+            int saldoOperativo = binarioANumero1(saldo);
+            cout << saldoOperativo << endl;
             saldoOperativo = saldoOperativo - 1000;
-            cout << "La transaccion tiene un cobro de 1000 COP\n Su saldo: " << saldoOperativo << endl;
+
+            cout << "La transacción tiene un cobro de 1000 COP\n Su saldo: " << saldoOperativo << endl;
+                    string cadena8;
             cadena8 = to_string(saldoOperativo);
             cadena8 = convertirABinario(cadena8);
             if(metodo == 1){
@@ -96,33 +101,26 @@ int main(){
         else{
             cout << "Retirar dinero" << endl;
             int metodo, semilla;
-            cout << "Ingrese el metodo con el que codifico la informacion: ";
-            cin >> metodo;
+            while(metodo!=1 || metodo!=2){
+                cout << "Ingrese el método con el que codifico la información: ";
+                cin >> metodo;
+                if(metodo != 1 || metodo != 2){cout << "Opcion incorreacta, elige nuevamente";}
+            }
+
             cout << "Ingrese la semilla: ";
             cin >> semilla;
             string saldo;
-            if(metodo == 1){
+            if (metodo == 1) {
                 saldo = decodificarBinarioMetodo1(usuario.saldo, semilla);
             }
-            else{
+            else {
                 saldo = decodificarBinarioMetodo2(usuario.saldo, semilla);
             }
-            int aux = 7;
-            string cadena8;
-            char saldo1;
-            for(int i = 0; i < sizeof(saldo); i ++){
-                if(i == aux){
-                    char aux1 = binarioANumero(cadena8);
-                    saldo1 += aux1;
-                    aux += 8;
-                }
-                else{
-                    cadena8 += saldo[i];
-                }
-            }
-            int saldoOperativo = static_cast<int>(saldo1);
+
+            int saldoOperativo = binarioANumero1(saldo);
             saldoOperativo = saldoOperativo - 1000;
-            cout << "La transaccion tiene un cobro de 1000 COP\n Su saldo: " << saldoOperativo << endl;
+
+            cout << "La transacción tiene un cobro de 1000 COP\n Su saldo: " << saldoOperativo << endl;
             int retirar;
             cout << "Ingrese la cantidad que desea retirar: ";
             cin >> retirar;
@@ -134,6 +132,7 @@ int main(){
                 cout << "Saldo insuficiente.\nverifique su saldo primeramente." << endl;
                 saldoOperativo += 1000;
             }
+            string cadena8;
             cadena8 = to_string(saldoOperativo);
             cadena8 = convertirABinario(cadena8);
             if(metodo == 1){
@@ -151,205 +150,215 @@ int main(){
     return 0;
 }
 
-string codificarBinarioMetodo1(string _binario, int _semilla){
+string codificarBinarioMetodo1(string _binario, int _semilla){ //divide la cadena en subcadenas con igual cantidad de caracteres que la semilla, añade esta informacion a un vector y codifica la informacion segun las condiciones
     string codificado = "";
     int cantCeros = 0;
     int cantUnos = 0;
-    int i = 0;
+    int bloqueActual = 0;
+    vector<string> dividido;
+    int aux = 0;
 
-    for (int j = 0; j < _semilla; j++) {  // Primer bloque
-        if (_binario[i] == '0') {
-            codificado += '1';  // Para los ceros
-            cantCeros += 1;
-        } else {
-            codificado += '0';  // Para los unos
-            cantUnos += 1;
+    int i = 0;
+    while (i < _binario.size()) {
+        if (aux < _semilla) {
+            dividido.push_back(_binario.substr(i, _semilla));
+            aux = 0;
+            i += _semilla;
         }
-        i++;
     }
 
-    while (i < _binario.size()) {
-        if (cantCeros == cantUnos) {  // Primera condición
+    while (bloqueActual < dividido.size()) {
+        string local = dividido.at(bloqueActual);
+
+        if (cantCeros == cantUnos) {
             cantCeros = 0;
             cantUnos = 0;
-            for (int j = 0; j < _semilla; j++) {
-                if (_binario[i] == '0') {
+            for (int j = 0; j < local.size(); j++) {
+                if (local[j] == '0') {
                     codificado += '1';
                     cantCeros += 1;
                 } else {
                     codificado += '0';
                     cantUnos += 1;
                 }
-                i++;
-            }
-        } else if (cantCeros > cantUnos) {  // Segunda condición
-            cantCeros = 0;
-            cantUnos = 0;
-            int aux = 0;
-            for (int j = 0; j < _semilla; j++) {
-                if (aux == 1) {
-                    if (_binario[i] == '0') {
-                        codificado += '1';
-                        cantCeros += 1;
-                    } else {
-                        codificado += '0';
-                        cantUnos += 1;
-                    }
-                    aux = 0;
-                } else {
-                    if (_binario[i] == '0') {
-                        codificado += '0';
-                        cantCeros += 1;
-                        aux = 1;
-                    } else {
-                        codificado += '1';
-                        cantUnos += 1;
-                        aux = 1;
-                    }
-                }
-                i++;
-            }
-        } else if (cantCeros < cantUnos) {  // Tercera condición
-            cantCeros = 0;
-            cantUnos = 0;
-            int aux = 0;
-            for (int j = 0; j < _semilla; j++) {
-                if (aux == 2) {
-                    if (_binario[i] == '0') {
-                        codificado += '1';
-                        cantCeros += 1;
-                    } else {
-                        codificado += '0';
-                        cantUnos += 1;
-                    }
-                    aux = 0;
-                } else {
-                    if (_binario[i] == '0') {
-                        codificado += '0';
-                        cantCeros += 1;
-                        aux = 2;
-                    } else {
-                        codificado += '1';
-                        cantUnos += 1;
-                        aux = 2;
-                    }
-                }
-                i++;
             }
         }
+        else if (cantCeros > cantUnos) {
+            cantCeros = 0;
+            cantUnos = 0;
+            int aux = 0;
+            for (int j = 0; j < local.size(); j++) {
+                if (aux == 1) {
+                    if (local[j] == '0') {
+                        codificado += '1';
+                        cantCeros += 1;
+                    } else {
+                        codificado += '0';
+                        cantUnos += 1;
+                    }
+                    aux = 0;
+                } else {
+                    if (local[j] == '0') {
+                        codificado += '0';
+                        cantCeros += 1;
+                        aux = 1;
+                    } else {
+                        codificado += '1';
+                        cantUnos += 1;
+                        aux = 1;
+                    }
+                }
+            }
+        }
+        else if (cantCeros < cantUnos) {
+            cantCeros = 0;
+            cantUnos = 0;
+            int aux = 0;
+            for (int j = 0; j < local.size(); j++) {
+                if (aux == 2) {
+                    if (local[j] == '0') {
+                        codificado += '1';
+                        cantCeros += 1;
+                    } else {
+                        codificado += '0';
+                        cantUnos += 1;
+                    }
+                    aux = 0;
+                } else {
+                    if (local[j] == '0') {
+                        codificado += '0';
+                        cantCeros += 1;
+                        aux ++;
+                    } else {
+                        codificado += '1';
+                        cantUnos += 1;
+                        aux ++;
+                    }
+                }
+            }
+        }
+        bloqueActual++;
     }
+
     return codificado;
 }
 
-string codificarBinarioMetodo2(string _binario, int _semilla){
+string codificarBinarioMetodo2(string _binario, int _semilla){//divide la cadena en subcadenas con igual cantidad de caracteres que la semilla, añade esta informacion a un vector y codifica la informacion segun las condiciones
     string codificado = "";
     int i = 0;
-    int semilla1 = _semilla;
-
-    while(i < sizeof(_binario)){
-        string temp = "";
-        temp = _binario[(semilla1 -1)];
-        codificado += temp;
-        for(int j = i; j < (semilla1 -1); j++){
-            codificado += _binario[j];
+    int aux = 0;
+    vector<string> dividido;
+    while (i < _binario.size()) {
+        if (aux < _semilla) {
+            dividido.push_back(_binario.substr(i, _semilla));
+            aux = 0;
+            i += _semilla;
         }
-        i = semilla1;
-        semilla1 += _semilla;
+    }
+    int bloqueActual = 0;
+
+    while(bloqueActual < dividido.size()){
+        string local = dividido[bloqueActual];
+        string temp = "";
+        temp = local[local.size()-1];
+        codificado += temp;
+        for(int j = 0; j < (local.size()-1); j++){
+            codificado += local[j];
+        }
+        bloqueActual++;
     }
     return codificado;
 }
 
-string decodificarBinarioMetodo1(string _codificado, int _semilla){
+string decodificarBinarioMetodo1(string _codificado, int _semilla){//divide la cadena en subcadenas con igual cantidad de caracteres que la semilla, añade esta informacion a un vector y decodifica la informacion segun las condiciones
     string original = "";
     int cantCeros = 0;
     int cantUnos = 0;
+    vector<string> dividido;
+    int aux = 0;
+
     int i = 0;
-
-    for (int j = 0; j < _semilla; j++) {  // Primer bloque
-        if (_codificado[j] == '0') {
-            original += '1';  // Para los ceros
-            cantCeros += 1;
-        } else {
-            original += '0';  // Para los unos
-            cantUnos += 1;
-        }
-        i++;
-    }
-
     while (i < _codificado.size()) {
+        if (aux < _semilla) {
+            dividido.push_back(_codificado.substr(i, _semilla));
+            aux = 0;
+            i += _semilla;
+        }
+    }
+    int bloqueActual = 0;
+    while (bloqueActual < dividido.size()) {
+        string local = dividido.at(bloqueActual);
         if (cantCeros == cantUnos) {  // Primera condición
             cantCeros = 0;
             cantUnos = 0;
-            for (int j = 0; j < _semilla; j++) {
-                if (_codificado[i] == '0') {
-                    original += '1';
+            for (int j = 0; j < local.size(); j++) {
+                if (local[j] == '1') { // Cambio de 0 a 1 y viceversa
+                    original += '0';
                     cantCeros += 1;
                 } else {
-                    original += '0';
+                    original += '1';
                     cantUnos += 1;
                 }
-                i++;
             }
         } else if (cantCeros > cantUnos) {  // Segunda condición
             cantCeros = 0;
             cantUnos = 0;
             int aux = 0;
-            for (int j = 0; j < _semilla; j++) {
+            for (int j = 0; j < local.size(); j++) {
                 if (aux == 1) {
-                    if (_codificado[i] == '0') {
-                        original += '1';
+                    if (local[j] == '1') {
+                        original += '0';
                         cantCeros += 1;
                     } else {
-                        original += '0';
+                        original += '1';
                         cantUnos += 1;
                     }
                     aux = 0;
                 } else {
-                    if (_codificado[i] == '0') {
-                        original += '0';
-                        cantCeros += 1;
-                        aux = 1;
-                    } else {
+                    if (local[j] == '1') {
                         original += '1';
                         cantUnos += 1;
                         aux = 1;
+                    } else {
+                        original += '0';
+                        cantCeros += 1;
+                        aux = 1;
                     }
                 }
-                i++;
             }
         } else if (cantCeros < cantUnos) {  // Tercera condición
             cantCeros = 0;
             cantUnos = 0;
             int aux = 0;
-            for (int j = 0; j < _semilla; j++) {
+            for (int j = 0; j < local.size(); j++) {
                 if (aux == 2) {
-                    if (_codificado[i] == '0') {
-                        original += '1';
+                    if (local[j] == '1') {
+                        original += '0';
                         cantCeros += 1;
                     } else {
-                        original += '0';
+                        original += '1';
                         cantUnos += 1;
                     }
                     aux = 0;
                 } else {
-                    if (_codificado[i] == '0') {
-                        original += '0';
-                        cantCeros += 1;
-                        aux = 2;
-                    } else {
+                    if (local[j] == '1') {
                         original += '1';
                         cantUnos += 1;
-                        aux = 2;
+                        aux ++;
+                    } else {
+                        original += '0';
+                        cantCeros += 1;
+                        aux ++;
                     }
                 }
-                i++;
             }
         }
+        bloqueActual++;
     }
     return original;
 }
 
-string decodificarBinarioMetodo2(string _codificado, int _semilla){
+string decodificarBinarioMetodo2(string _codificado, int _semilla){//divide la cadena en subcadenas con igual cantidad de caracteres que la semilla, añade esta informacion a un vector y decodifica la informacion segun las condiciones
     string original = "";
     int i = 0;
     int semilla1 = _semilla;
@@ -367,7 +376,7 @@ string decodificarBinarioMetodo2(string _codificado, int _semilla){
     return original;
 }
 
-string convertirABinario(string _linea){
+string convertirABinario(string _linea){ //convierte un string a un binario y lo retorna
     string binario;
     for(int i = 0; i < _linea.length(); i++){
         bitset<8> bin(_linea[i]);
@@ -376,7 +385,7 @@ string convertirABinario(string _linea){
     return binario;
 }
 
-char binarioANumero(string _linea){
+char binarioANumero(string _linea){ // opcion para convertir el binario a un caracter
     if((_linea.length() % 8) != 0){
         cout << "Error la cadena debe ser multiplo de 8" << endl;
     }
@@ -422,7 +431,7 @@ int pruebaCodificar(){ //para registrar el usuario admin
     return 0;
 }
 
-bool verificarAdmin(){
+bool verificarAdmin(){//abre el archivo sudo, toma los datos y los compara con los ingresado
     ifstream archivo;
     string clave;
     archivo.open("sudo.txt");
@@ -438,8 +447,10 @@ bool verificarAdmin(){
     int aux = 0;
     while(aux < 3){
         string claveIngresada;
+        cout << "Ingrese la clave: ";
+        cin >> claveIngresada;
+        claveIngresada = convertirABinario(claveIngresada);
         string codificar = codificarBinarioMetodo1(claveIngresada, 4);
-
         if(clave == codificar){
             aux = aux + 4;
             cout << "Administrador encontrado" << endl;
@@ -454,7 +465,7 @@ bool verificarAdmin(){
     return false;
 }
 
-void llenarMapaUsuarios(){
+void llenarMapaUsuarios(){ //lee el archivo usuarios.txt, lee linea por linea y despues esta linea la separa sugun la condicion y los añade a una estructura, para despues añador la estructura a un mapa
     ifstream archivo;
     string line;
     archivo.open("usuarios.txt");
@@ -473,23 +484,31 @@ void llenarMapaUsuarios(){
     archivo.close();
 }
 
-Usuario verificarUsuario(){
+Usuario verificarUsuario(){ //busca en el mapa de usuarios para verificar si el usuario existe
     string cedula, clave;
     cout << "Ingrese la cédula: ";
     cin >> cedula;
     cout << "Ingrese la clave: ";
     cin >> clave;
-    string nuevaClave = convertirABinario(clave);
     int metodo, semilla;
-    cout << "Ingrese el metodo con el que se codifico la informacion: ";
-    cin >> metodo;
-    cout << "Ingrese la semilla con la que se codifico la informacion: ";
+    while(metodo!=1 || metodo!=2){
+        cout << "Ingrese el método con el que codifico la información: ";
+        cin >> metodo;
+        if(metodo != 1 || metodo != 2){cout << "Opcion incorreacta, elige nuevamente";}
+    }
+
+    cout << "Ingrese la semilla: ";
     cin >> semilla;
 
+    string nuevaClave = convertirABinario(clave);
+    string nuevaCedula = convertirABinario(cedula);
+
     if(metodo == 1){
+        cedula = codificarBinarioMetodo1(nuevaCedula,semilla);
         clave = codificarBinarioMetodo1(nuevaClave, semilla);
     }
     else{
+        cedula = codificarBinarioMetodo2(nuevaCedula,semilla);
         clave = codificarBinarioMetodo2(nuevaClave, semilla);
     }
     if (usuarios.count(cedula) > 0 && usuarios[cedula].clave == clave){
@@ -502,14 +521,18 @@ Usuario verificarUsuario(){
     }
 }
 
-void registrarUsuario(){
+void registrarUsuario(){//pide los datos del usuario, convierte a binario la info y la codifica segun las condiciones
     Usuario usuario;
     bool cedula = false;
     string cedula1, clave, saldo;
     int metodo, semilla;
-    cout << "Ingrese el metodo de codificacion deseado (1 o2): ";
-    cin >> metodo;
-    cout << "Ingrese la semilla de codificación: ";
+    while(metodo!=1 || metodo!=2){
+        cout << "Ingrese el método con el que codifico la información: ";
+        cin >> metodo;
+        if(metodo != 1 || metodo != 2){cout << "Opcion incorreacta, elige nuevamente";}
+    }
+
+    cout << "Ingrese la semilla: ";
     cin >> semilla;
 
     while(!cedula){
@@ -548,11 +571,11 @@ void registrarUsuario(){
     usuarios[usuario.cedula] = usuario;
 }
 
-void guardarUsuarios(){
+void guardarUsuarios(){ //añade la informacion del mapa en el archivo "usuarios.txt"
     ofstream archivo;
     archivo.open("usuarios.txt");
     for(auto& usuario : usuarios){
-        archivo << usuario.second.cedula << " " << usuario.second.clave << " " << usuario.second.saldo << ";";
+        archivo << usuario.second.cedula << " " << usuario.second.clave << " " << usuario.second.saldo << ";" <<endl;
     }
     archivo.close();
 }
